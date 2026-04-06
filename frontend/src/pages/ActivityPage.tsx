@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Clock, ChevronRight, X, RotateCcw } from 'lucide-react';
+import { apiGetRiderTrips } from '../api';
 
 interface Activity {
   destination: string;
@@ -12,16 +13,34 @@ interface Activity {
 
 interface ActivityPageProps {
   onBookRide?: () => void;
+  userId?: number | null;
 }
 
-const ActivityPage: React.FC<ActivityPageProps> = ({ onBookRide }) => {
-  const [selected, setSelected] = useState<Activity | null>(null);
+const MOCK_ACTIVITIES: Activity[] = [
+  { from: 'Cape Town Int. Airport', destination: 'Waterfront Luxury Suites', date: 'Mar 24, 2026', time: '14:30', price: 'R145', status: 'Completed' },
+  { from: 'Gardens, Cape Town', destination: 'Cape Town Int. Airport', date: 'Mar 22, 2026', time: '09:15', price: 'R210', status: 'Completed' },
+  { from: 'Sea Point', destination: 'Green Point Stadium', date: 'Mar 20, 2026', time: '18:45', price: 'R65', status: 'Cancelled' },
+];
 
-  const activities: Activity[] = [
-    { from: 'Cape Town Int. Airport', destination: 'Waterfront Luxury Suites', date: 'Mar 24, 2026', time: '14:30', price: 'R145', status: 'Completed' },
-    { from: 'Gardens, Cape Town', destination: 'Cape Town Int. Airport', date: 'Mar 22, 2026', time: '09:15', price: 'R210', status: 'Completed' },
-    { from: 'Sea Point', destination: 'Green Point Stadium', date: 'Mar 20, 2026', time: '18:45', price: 'R65', status: 'Cancelled' },
-  ];
+const ActivityPage: React.FC<ActivityPageProps> = ({ onBookRide, userId }) => {
+  const [selected, setSelected] = useState<Activity | null>(null);
+  const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
+
+  useEffect(() => {
+    if (!userId) return;
+    apiGetRiderTrips(userId).then((trips) => {
+      if (Array.isArray(trips) && trips.length > 0) {
+        setActivities(trips.map((t: any) => ({
+          from: t.originCity,
+          destination: t.destinationCity,
+          date: new Date().toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }),
+          time: '--:--',
+          price: 'R--',
+          status: t.status.charAt(0) + t.status.slice(1).toLowerCase(),
+        })));
+      }
+    }).catch(() => {/* keep mock data */});
+  }, [userId]);
 
   return (
     <div className="container fade-in" style={{ padding: '32px 0 64px' }}>

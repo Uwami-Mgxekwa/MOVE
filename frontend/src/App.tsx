@@ -7,15 +7,19 @@ import TripStatus from './components/TripStatus';
 import ActivityPage from './pages/ActivityPage';
 import AccountPage from './pages/AccountPage';
 /* Icons */
-import { Home as HomeIcon, LayoutPanelLeft, User, Activity } from 'lucide-react';
+import { Home as HomeIcon, User, Activity } from 'lucide-react';
 
 type Page = 'home' | 'activity' | 'account' | 'booking' | 'trip';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [userId, setUserId] = useState<number | null>(null);
+  const [userName, setUserName] = useState('');
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = (id: number, name: string) => {
+    setUserId(id);
+    setUserName(name);
     setIsAuthenticated(true);
     setCurrentPage('home');
   };
@@ -25,7 +29,7 @@ const App: React.FC = () => {
       case 'home':
         return <Home onBookRide={() => setCurrentPage('booking')} />;
       case 'activity':
-        return <ActivityPage onBookRide={() => setCurrentPage('booking')} />;
+        return <ActivityPage onBookRide={() => setCurrentPage('booking')} userId={userId} />;
       case 'account':
         return <AccountPage onLogout={() => setIsAuthenticated(false)} />;
       case 'booking':
@@ -58,7 +62,7 @@ const App: React.FC = () => {
                style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#eee', overflow: 'hidden', cursor: 'pointer', border: '2px solid #fff', boxShadow: '0 0 0 1px #eee' }}
                onClick={() => setCurrentPage('account')}
              >
-                <img src="https://ui-avatars.com/api/?name=John+Doe&background=000&color=fff" alt="Avatar" />
+                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=000&color=fff`} alt="Avatar" />
              </div>
           </div>
         </div>

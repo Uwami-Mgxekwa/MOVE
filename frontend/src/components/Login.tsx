@@ -109,10 +109,14 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             </div>
           )}
 
-          <button type="submit" className="btn btn-primary" style={{ marginTop: '12px' }}>
-            {isLogin ? 'Sign In' : 'Create Account'}
-            <ArrowRight size={20} />
+          <button type="submit" className="btn btn-primary" style={{ marginTop: '12px' }} disabled={loading}>
+            {loading ? 'Please wait…' : (isLogin ? 'Sign In' : 'Create Account')}
+            {!loading && <ArrowRight size={20} />}
           </button>
+
+          {error && (
+            <div style={{ fontSize: '13px', color: 'var(--error)', textAlign: 'center', fontWeight: 600 }}>{error}</div>
+          )}
         </form>
 
         <div style={{ margin: '32px 0', display: 'flex', alignItems: 'center', gap: '16px' }}>
