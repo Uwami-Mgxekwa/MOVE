@@ -1,6 +1,5 @@
 import React from 'react';
-import { User, CreditCard, ShieldCheck, Settings, LogOut, ChevronRight, Mail, Phone, MapPin } from 'lucide-react';
-import Footer from '../components/Footer';
+import { User, CreditCard, ShieldCheck, Settings, LogOut, ChevronRight, Mail, Phone } from 'lucide-react';
 
 interface AccountPageProps {
   onLogout: () => void;
@@ -78,9 +77,6 @@ const AccountPage: React.FC<AccountPageProps> = ({ onLogout }) => {
         <LogOut size={18} />
         Log Out of Account
       </button>
-
-      {/* Grayed out footer as requested */}
-      <Footer />
     </div>
   );
 };
