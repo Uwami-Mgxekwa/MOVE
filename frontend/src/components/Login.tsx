@@ -37,7 +37,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 <User size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--text-muted)' }} />
                 <input
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="Thabo Nkosi"
                   style={{ paddingLeft: '48px' }}
                   required
                 />
