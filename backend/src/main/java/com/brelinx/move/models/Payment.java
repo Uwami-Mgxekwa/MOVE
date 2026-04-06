@@ -1,17 +1,9 @@
 package com.brelinx.move.models;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 @Entity
 @Table(name = "payments")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class Payment {
 
     @Id
@@ -25,5 +17,20 @@ public class Payment {
     private Double amount;
 
     @Column(nullable = false)
-    private String status; // PENDING, PAID, REFUNDED
+    private String status;
+
+    public Payment() {}
+
+    public Payment(Long id, Long tripId, Double amount, String status) {
+        this.id = id; this.tripId = tripId; this.amount = amount; this.status = status;
+    }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Long getTripId() { return tripId; }
+    public void setTripId(Long tripId) { this.tripId = tripId; }
+    public Double getAmount() { return amount; }
+    public void setAmount(Double amount) { this.amount = amount; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
