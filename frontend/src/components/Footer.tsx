@@ -14,23 +14,7 @@ const Footer: React.FC = () => {
         opacity: 0.6
       }}
     >
-      <div style={{ marginBottom: '4px' }}>© 2026 MOVE Ride App. All rights reserved.</div>
-      <div>
-        Powered by{' '}
-        <a 
-          href="https://brelinx.com" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          style={{ 
-            color: 'inherit', 
-            fontWeight: 700, 
-            textDecoration: 'underline', 
-            textUnderlineOffset: '2px' 
-          }}
-        >
-          Brelinx
-        </a>
-      </div>
+      <div>© 2026 MOVE Ride App. All rights reserved.</div>
     </div>
   );
 };
