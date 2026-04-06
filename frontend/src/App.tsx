@@ -25,7 +25,7 @@ const App: React.FC = () => {
       case 'home':
         return <Home onBookRide={() => setCurrentPage('booking')} />;
       case 'activity':
-        return <ActivityPage />;
+        return <ActivityPage onBookRide={() => setCurrentPage('booking')} />;
       case 'account':
         return <AccountPage onLogout={() => setIsAuthenticated(false)} />;
       case 'booking':

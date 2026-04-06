@@ -31,6 +31,47 @@
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-theme='dark'] {
+  --primary: #1a1a1a;
+  --secondary: #ffffff;
+  --bg-color: #121212;
+  --text-primary: #f1f1f1;
+  --text-secondary: #a0a0a0;
+  --text-muted: #666666;
+  --border-color: #2a2a2a;
+  --accent-transparent: rgba(106, 13, 173, 0.2);
+}
+
+[data-theme='dark'] body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+}
+
+[data-theme='dark'] .card {
+  background-color: #1e1e1e;
+}
+
+[data-theme='dark'] header {
+  background-color: #1a1a1a;
+  border-bottom-color: #2a2a2a;
+}
+
+[data-theme='dark'] .bottom-nav {
+  background-color: #1a1a1a;
+  border-top-color: #2a2a2a;
+}
+
+[data-theme='dark'] input {
+  background-color: #2a2a2a !important;
+  border-color: #333 !important;
+  color: #f1f1f1;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 * {
   margin: 0;
   padding: 0;
