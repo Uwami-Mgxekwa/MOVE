@@ -31,6 +31,11 @@ public class TripController {
         return tripRepository.findById(id).orElseThrow(() -> new RuntimeException("Trip not found"));
     }
 
+    @GetMapping("/rider/{riderId}")
+    public List<Trip> getTripsByRider(@PathVariable Long riderId) {
+        return tripRepository.findByRiderId(riderId);
+    }
+
     @PutMapping("/{id}/status")
     public Trip updateTripStatus(@PathVariable Long id, @RequestParam String status) {
         Trip trip = tripRepository.findById(id).orElseThrow(() -> new RuntimeException("Trip not found"));
