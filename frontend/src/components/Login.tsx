@@ -59,6 +59,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 <input
                   type="text"
                   placeholder="Sipho Dlamini"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   style={{ paddingLeft: '48px' }}
                   required
                 />
