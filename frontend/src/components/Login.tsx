@@ -1,20 +1,41 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { apiLogin, apiRegister } from '../api';
 
 interface LoginProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (userId: number, name: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [isLogin, setIsLogin] = useState(true);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(`${isLogin ? 'Logging in' : 'Signing up'} with ${email}`);
-    // Simulate authentication success
-    onLoginSuccess();
+    setError('');
+    setLoading(true);
+    try {
+      const data = isLogin
+        ? await apiLogin(email, password)
+        : await apiRegister(name, email, password);
+
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('userId', String(data.userId));
+        localStorage.setItem('userName', data.name);
+        onLoginSuccess(data.userId, data.name);
+      } else {
+        setError(data.message ?? 'Something went wrong. Please try again.');
+      }
+    } catch {
+      setError('Could not connect to server. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
