@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Github } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -99,7 +99,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </div>
 
         <button className="btn" style={{ border: '1px solid var(--border-color)', backgroundColor: 'transparent', gap: '12px' }}>
-          <Github size={20} />
           Continue with Google
         </button>
 
