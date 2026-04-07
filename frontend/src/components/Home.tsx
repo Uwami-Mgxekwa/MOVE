@@ -158,11 +158,11 @@ const Home: React.FC<HomeProps> = ({ onBookRide, userId }) => {
             {savedPlaces.map((place) => (
               <div key={place.id} className="card"
                 style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', cursor: 'pointer', marginBottom: 0 }}>
-                <div onClick={() => { setToCity(place.address); onBookRide(); }}
+                <div onClick={() => onBookRide(fromCity, place.address)}
                   style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--accent-transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}>
                   <MapPin size={16} />
                 </div>
-                <div style={{ flex: 1 }} onClick={() => { setToCity(place.address); onBookRide(); }}>
+                <div style={{ flex: 1 }} onClick={() => onBookRide(fromCity, place.address)}>
                   <div style={{ fontSize: '15px', fontWeight: 700 }}>{place.label}</div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{place.address}</div>
                 </div>
