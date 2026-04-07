@@ -93,6 +93,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
                 style={{ paddingLeft: '48px' }}
                 required
               />
@@ -148,7 +149,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               }
             }}
             onError={() => setError('Google sign-in failed.')}
-            width="100%"
+            width="400"
             text={isLogin ? 'signin_with' : 'signup_with'}
           />
         </div>
