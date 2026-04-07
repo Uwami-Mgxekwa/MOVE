@@ -17,9 +17,10 @@ interface ChatMessage { sender: 'rider' | 'driver'; text: string; time: string; 
 
 interface TripStatusProps {
   tripId?: number | null;
+  onTripComplete?: () => void;
 }
 
-const TripStatus: React.FC<TripStatusProps> = ({ tripId }) => {
+const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [cancelled, setCancelled] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -85,6 +86,7 @@ const TripStatus: React.FC<TripStatusProps> = ({ tripId }) => {
           const data = JSON.parse(msg.body);
           if (data.eta !== undefined) setEta(data.eta);
           if (data.lat && data.lng) setDriverPos({ lat: data.lat, lng: data.lng });
+          if (data.status === 'COMPLETED') onTripComplete?.();
         });
         client.subscribe(`/topic/chat/${tripId}`, (msg) => {
           const data = JSON.parse(msg.body);

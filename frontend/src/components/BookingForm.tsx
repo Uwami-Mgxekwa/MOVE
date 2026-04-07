@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MapPin, Navigation, Calendar, Clock, Users, Shield, Car, Bus, Star } from 'lucide-react';
-import { apiCreateTrip, apiGeneratePayFastPayment } from '../api';
+import { MapPin, Navigation, Calendar, Clock, Users, Shield, Car, Bus, Star, Tag, CheckCircle } from 'lucide-react';
+import { apiCreateTrip, apiGeneratePayFastPayment, apiValidatePromo } from '../api';
 import PayFastPayment from './PayFastPayment';
 
 const SERVICES = [
@@ -24,9 +24,32 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
     passengers: 1,
   });
   const [selectedService, setSelectedService] = useState(0);
+  const [shareRide, setShareRide] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [payFastData, setPayFastData] = useState<{ paymentUrl: string; params: Record<string, string> } | null>(null);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoError, setPromoError] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+
+  const applyPromo = async () => {
+    setPromoError('');
+    const result = await apiValidatePromo(promoCode).catch(() => ({ valid: false }));
+    if (result.valid) {
+      setPromoDiscount(result.discountPercent);
+      setPromoApplied(true);
+    } else {
+      setPromoError('Invalid or expired promo code');
+      setPromoDiscount(0);
+      setPromoApplied(false);
+    }
+  };
+
+  const getFinalPrice = () => {
+    const base = SERVICES[selectedService].price;
+    return promoDiscount > 0 ? Math.round(base * (1 - promoDiscount / 100)) : base;
+  };
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +65,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
       if (!trip.id) { setError('Failed to book ride. Please try again.'); setLoading(false); return; }
 
       const service = SERVICES[selectedService];
-      const pf = await apiGeneratePayFastPayment(service.price, `MOVE Ride - ${service.name}`);
+      const pf = await apiGeneratePayFastPayment(getFinalPrice(), `MOVE Ride - ${service.name}`);
       if (pf.paymentUrl) {
         setPayFastData(pf);
         onConfirm(trip.id);
@@ -166,8 +189,39 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
           {/* Payment Method */}
           <PaymentSelector />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', padding: '12px', backgroundColor: '#e6f4ea', borderRadius: '10px', color: '#1e7e34' }}>
-             <Shield size={16} />
+          {/* Ride Sharing */}
+          <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#f9f9f9', borderRadius: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '14px' }}>Share this ride</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>Split the fare with other riders going your way</div>
+            </div>
+            <button type="button" onClick={() => setShareRide(!shareRide)}
+              style={{ width: '48px', height: '28px', borderRadius: '14px', backgroundColor: shareRide ? 'var(--accent)' : '#ddd', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+              <div style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: '3px', left: shareRide ? '23px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
+            </button>
+          </div>
+
+          {/* Promo Code */}
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '10px', display: 'block' }}>PROMO CODE</label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <Tag size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-muted)' }} />
+                <input value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoApplied(false); setPromoDiscount(0); }}
+                  placeholder="Enter code" disabled={promoApplied}
+                  style={{ width: '100%', padding: '12px 12px 12px 36px', border: `1px solid ${promoApplied ? '#34a853' : '#e2e2e2'}`, borderRadius: '10px', fontSize: '14px', fontFamily: 'inherit', backgroundColor: promoApplied ? '#f0faf4' : '#fff' }} />
+              </div>
+              <button type="button" onClick={applyPromo} disabled={!promoCode.trim() || promoApplied}
+                className="btn" style={{ padding: '0 20px', backgroundColor: promoApplied ? '#34a853' : 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
+                {promoApplied ? <CheckCircle size={18} /> : 'Apply'}
+              </button>
+            </div>
+            {promoError && <div style={{ fontSize: '12px', color: 'var(--error)', marginTop: '6px' }}>{promoError}</div>}
+            {promoApplied && <div style={{ fontSize: '12px', color: '#34a853', marginTop: '6px', fontWeight: 600 }}>✓ {promoDiscount}% discount applied!</div>}
+          </div>
+
+          {/* Safety */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', padding: '12px', backgroundColor: '#e6f4ea', borderRadius: '10px', color: '#1e7e34' }}>             <Shield size={16} />
              <span style={{ fontSize: '12px', fontWeight: 700 }}>Your trip is protected with MOVE Safety.</span>
           </div>
 
@@ -177,7 +231,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
             <PayFastPayment paymentUrl={payFastData.paymentUrl} params={payFastData.params} />
           ) : (
             <button type="submit" className="btn btn-accent" style={{ height: '60px', borderRadius: '16px' }} disabled={loading}>
-              {loading ? 'Booking…' : `Confirm Move — R${SERVICES[selectedService].price}`}
+              {loading ? 'Booking…' : `Confirm Move — R${getFinalPrice()}${promoApplied ? ` (was R${SERVICES[selectedService].price})` : ''}`}
             </button>
           )}
         </form>

@@ -6,6 +6,8 @@ import BookingForm from './components/BookingForm';
 import TripStatus from './components/TripStatus';
 import ActivityPage from './pages/ActivityPage';
 import AccountPage from './pages/AccountPage';
+import NotificationBell from './components/NotificationBell';
+import RideRating from './components/RideRating';
 /* Icons */
 import { Home as HomeIcon, User, Activity } from 'lucide-react';
 
@@ -17,6 +19,7 @@ const App: React.FC = () => {
   const [userId, setUserId] = useState<number | null>(null);
   const [userName, setUserName] = useState('');
   const [activeTripId, setActiveTripId] = useState<number | null>(null);
+  const [showRating, setShowRating] = useState(false);
 
   const handleLoginSuccess = (id: number, name: string) => {
     setUserId(id);
@@ -28,7 +31,7 @@ const App: React.FC = () => {
   const renderDashboard = () => {
     switch (currentPage) {
       case 'home':
-        return <Home onBookRide={() => setCurrentPage('booking')} />;
+        return <Home onBookRide={() => setCurrentPage('booking')} userId={userId} />;
       case 'activity':
         return <ActivityPage onBookRide={() => setCurrentPage('booking')} userId={userId} />;
       case 'account':
@@ -36,7 +39,7 @@ const App: React.FC = () => {
       case 'booking':
         return <BookingForm onConfirm={(tripId) => { setActiveTripId(tripId); setCurrentPage('trip'); }} />;
       case 'trip':
-        return <TripStatus tripId={activeTripId} />;
+        return <TripStatus tripId={activeTripId} onTripComplete={() => setShowRating(true)} />;
       default:
         return <Home onBookRide={() => setCurrentPage('booking')} />;
     }
@@ -58,7 +61,8 @@ const App: React.FC = () => {
           >
             MOVE<span style={{ color: 'var(--accent)' }}>.</span>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+             <NotificationBell userId={userId} />
              <div 
                style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#eee', overflow: 'hidden', cursor: 'pointer', border: '2px solid #fff', boxShadow: '0 0 0 1px #eee' }}
                onClick={() => setCurrentPage('account')}
@@ -98,6 +102,14 @@ const App: React.FC = () => {
           <span>Account</span>
         </div>
       </nav>
+      {/* Ride Rating Modal */}
+      {showRating && activeTripId && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ width: '100%', backgroundColor: '#fff', borderRadius: '24px 24px 0 0' }}>
+            <RideRating tripId={activeTripId} onDone={() => { setShowRating(false); setCurrentPage('home'); }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
