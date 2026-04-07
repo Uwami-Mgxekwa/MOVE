@@ -1,15 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Navigation, Clock, Star, Loader } from 'lucide-react';
+import { Search, MapPin, Navigation, Clock, Star, Loader, Plus, X } from 'lucide-react';
+import { apiGetSavedPlaces, apiSavePlace, apiDeletePlace } from '../api';
 
 interface HomeProps {
   onBookRide: () => void;
+  userId?: number | null;
 }
 
-const Home: React.FC<HomeProps> = ({ onBookRide }) => {
+interface SavedPlace { id: number; label: string; address: string; }
+
+const Home: React.FC<HomeProps> = ({ onBookRide, userId }) => {
   const [fromCity, setFromCity] = useState('');
   const [toCity, setToCity] = useState('');
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState('');
+  const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
+  const [showAddPlace, setShowAddPlace] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
+  const [newAddress, setNewAddress] = useState('');
+
+  useEffect(() => {
+    if (userId) {
+      apiGetSavedPlaces(userId).then((data) => {
+        if (Array.isArray(data)) setSavedPlaces(data);
+      }).catch(() => {});
+    }
+  }, [userId]);
+
+  const addPlace = () => {
+    if (!newLabel.trim() || !newAddress.trim() || !userId) return;
+    apiSavePlace({ userId, label: newLabel.trim(), address: newAddress.trim() }).then((p) => {
+      setSavedPlaces((prev) => [...prev, p]);
+      setNewLabel(''); setNewAddress(''); setShowAddPlace(false);
+    }).catch(() => {});
+  };
+
+  const deletePlace = (id: number) => {
+    apiDeletePlace(id).then(() => setSavedPlaces((prev) => prev.filter((p) => p.id !== id))).catch(() => {});
+  };
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -115,32 +143,59 @@ const Home: React.FC<HomeProps> = ({ onBookRide }) => {
 
         <div style={{ marginTop: '40px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Recent Locations</h2>
-            <button onClick={onBookRide} style={{ color: 'var(--accent)', fontSize: '14px', fontWeight: 700 }}>See all</button>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Saved Places</h2>
+            <button onClick={() => setShowAddPlace(true)} style={{ color: 'var(--accent)', fontSize: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Plus size={16} /> Add
+            </button>
           </div>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              { label: 'Work', address: '123 Business Way, Cape Town', icon: <Clock size={16} /> },
-              { label: 'Home', address: '42 Residential Ave, Gardens', icon: <Star size={16} /> }
-            ].map((loc, index) => (
-              <div 
-                key={index} 
-                className="card" 
-                style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', cursor: 'pointer', marginBottom: 0 }}
-                onClick={() => onBookRide()}
-              >
-                <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: index === 0 ? 'var(--accent-transparent)' : '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: index === 0 ? 'var(--accent)' : 'var(--text-secondary)' }}>
-                  {loc.icon}
+            {savedPlaces.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                No saved places yet. Add your home or work for quick access.
+              </div>
+            )}
+            {savedPlaces.map((place) => (
+              <div key={place.id} className="card"
+                style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'center', cursor: 'pointer', marginBottom: 0 }}>
+                <div onClick={() => { setToCity(place.address); onBookRide(); }}
+                  style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--accent-transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', flexShrink: 0 }}>
+                  <MapPin size={16} />
                 </div>
-                <div>
-                  <div style={{ fontSize: '15px', fontWeight: 700 }}>{loc.label}</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{loc.address}</div>
+                <div style={{ flex: 1 }} onClick={() => { setToCity(place.address); onBookRide(); }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700 }}>{place.label}</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{place.address}</div>
                 </div>
+                <button onClick={() => deletePlace(place.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}>
+                  <X size={16} />
+                </button>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Add Place Sheet */}
+        {showAddPlace && (
+          <div onClick={() => setShowAddPlace(false)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', backgroundColor: '#fff', borderRadius: '24px 24px 0 0', padding: '32px 24px 48px' }}>
+              <div style={{ fontWeight: 900, fontSize: '18px', marginBottom: '24px' }}>Add Saved Place</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 800, color: '#a1a1a1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Label</label>
+                  <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="e.g. Home, Work, Gym"
+                    style={{ width: '100%', padding: '12px 14px', border: '1px solid #e2e2e2', borderRadius: '10px', fontSize: '15px', fontFamily: 'inherit', marginTop: '6px' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 800, color: '#a1a1a1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Address</label>
+                  <input value={newAddress} onChange={(e) => setNewAddress(e.target.value)} placeholder="Full address"
+                    style={{ width: '100%', padding: '12px 14px', border: '1px solid #e2e2e2', borderRadius: '10px', fontSize: '15px', fontFamily: 'inherit', marginTop: '6px' }} />
+                </div>
+                <button onClick={addPlace} className="btn btn-primary" style={{ marginTop: '8px' }}>Save Place</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
