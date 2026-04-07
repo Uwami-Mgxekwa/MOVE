@@ -3,7 +3,7 @@ import { Search, MapPin, Navigation, Clock, Star, Loader, Plus, X } from 'lucide
 import { apiGetSavedPlaces, apiSavePlace, apiDeletePlace } from '../api';
 
 interface HomeProps {
-  onBookRide: () => void;
+  onBookRide: (pickup: string, destination: string) => void;
   userId?: number | null;
 }
 
@@ -71,7 +71,7 @@ const Home: React.FC<HomeProps> = ({ onBookRide, userId }) => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    onBookRide();
+    onBookRide(fromCity, toCity);
   };
 
   return (

@@ -20,6 +20,8 @@ const App: React.FC = () => {
   const [userName, setUserName] = useState('');
   const [activeTripId, setActiveTripId] = useState<number | null>(null);
   const [showRating, setShowRating] = useState(false);
+  const [bookingPickup, setBookingPickup] = useState('');
+  const [bookingDestination, setBookingDestination] = useState('');
 
   const handleLoginSuccess = (id: number, name: string) => {
     setUserId(id);
@@ -31,13 +33,13 @@ const App: React.FC = () => {
   const renderDashboard = () => {
     switch (currentPage) {
       case 'home':
-        return <Home onBookRide={() => setCurrentPage('booking')} userId={userId} />;
+        return <Home onBookRide={(pickup, destination) => { setBookingPickup(pickup); setBookingDestination(destination); setCurrentPage('booking'); }} userId={userId} />;
       case 'activity':
         return <ActivityPage onBookRide={() => setCurrentPage('booking')} userId={userId} />;
       case 'account':
         return <AccountPage onLogout={() => setIsAuthenticated(false)} />;
       case 'booking':
-        return <BookingForm onConfirm={(tripId) => { setActiveTripId(tripId); setCurrentPage('trip'); }} />;
+        return <BookingForm onConfirm={(tripId) => { setActiveTripId(tripId); setCurrentPage('trip'); }} pickup={bookingPickup} destination={bookingDestination} />;
       case 'trip':
         return <TripStatus tripId={activeTripId} onTripComplete={() => setShowRating(true)} />;
       default:
