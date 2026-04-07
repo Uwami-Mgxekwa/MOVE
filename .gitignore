@@ -2,6 +2,7 @@
 .env
 .env.*
 env.txt
+backend/.env
 
 # Backend secrets
 backend/src/main/resources/application.properties
