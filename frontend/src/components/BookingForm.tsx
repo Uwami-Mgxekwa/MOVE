@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, Navigation, Calendar, Clock, Users, Shield, Car, Bus, Star } from 'lucide-react';
-import { apiCreateTrip } from '../api';
+import { apiCreateTrip, apiGeneratePayFastPayment } from '../api';
+import PayFastPayment from './PayFastPayment';
 
 const SERVICES = [
   { name: 'MOVE Go', icon: <Car size={22} />, price: 85, label: 'R85', desc: 'Affordable, everyday rides' },
@@ -25,6 +26,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
   const [selectedService, setSelectedService] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [payFastData, setPayFastData] = useState<{ paymentUrl: string; params: Record<string, string> } | null>(null);
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,10 +39,15 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
         destinationCity: formData.destination,
         riderId,
       });
-      if (trip.id) {
+      if (!trip.id) { setError('Failed to book ride. Please try again.'); setLoading(false); return; }
+
+      const service = SERVICES[selectedService];
+      const pf = await apiGeneratePayFastPayment(service.price, `MOVE Ride - ${service.name}`);
+      if (pf.paymentUrl) {
+        setPayFastData(pf);
         onConfirm(trip.id);
       } else {
-        setError('Failed to book ride. Please try again.');
+        setError('Payment setup failed. Please try again.');
       }
     } catch {
       setError('Could not connect to server. Please try again.');
@@ -154,7 +161,6 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
                 </div>
               ))}
             </div>
-            </div>
           </div>
 
           {/* Payment Method */}
@@ -167,9 +173,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
 
           {error && <div style={{ fontSize: '13px', color: 'var(--error)', textAlign: 'center', fontWeight: 600, marginBottom: '12px' }}>{error}</div>}
 
-          <button type="submit" className="btn btn-accent" style={{ height: '60px', borderRadius: '16px' }} disabled={loading}>
-            {loading ? 'Booking…' : `Confirm Move — R${SERVICES[selectedService].price}`}
-          </button>
+          {payFastData ? (
+            <PayFastPayment paymentUrl={payFastData.paymentUrl} params={payFastData.params} />
+          ) : (
+            <button type="submit" className="btn btn-accent" style={{ height: '60px', borderRadius: '16px' }} disabled={loading}>
+              {loading ? 'Booking…' : `Confirm Move — R${SERVICES[selectedService].price}`}
+            </button>
+          )}
         </form>
       </div>
     </div>

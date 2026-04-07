@@ -84,10 +84,10 @@ export const apiUpdateUser = (id: number, data: { name: string; email: string })
     body: JSON.stringify(data),
   }).then((r) => r.json());
 
-// Stripe
-export const apiCreatePaymentIntent = (amount: number, currency = 'zar') =>
-  fetch(`${BASE_URL}/payments/stripe/create-intent`, {
+// PayFast
+export const apiGeneratePayFastPayment = (amount: number, itemName: string) =>
+  fetch(`${BASE_URL}/payments/payfast/generate`, {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify({ amount: amount * 100, currency }), // convert to cents
+    body: JSON.stringify({ amount, itemName }),
   }).then((r) => r.json());
