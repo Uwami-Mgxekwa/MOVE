@@ -22,6 +22,8 @@ public class User {
     @Column(nullable = false)
     private String role;
 
+    private String phone;
+
     public User() {}
 
     public User(Long id, String name, String email, String password, String role) {
@@ -39,4 +41,6 @@ public class User {
     public void setPassword(String password) { this.password = password; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 }

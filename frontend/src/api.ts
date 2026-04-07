@@ -124,3 +124,18 @@ export const apiRateTrip = (tripId: number, riderId: number, stars: number, comm
     method: 'POST', headers: getHeaders(),
     body: JSON.stringify({ tripId, riderId, stars, comment }),
   }).then((r) => r.json());
+
+// OTP
+export const apiSendOtp = (phone: string) =>
+  fetch(`${BASE_URL}/auth/otp/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  }).then((r) => r.json());
+
+export const apiVerifyOtp = (phone: string, code: string) =>
+  fetch(`${BASE_URL}/auth/otp/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, code }),
+  }).then((r) => r.json());

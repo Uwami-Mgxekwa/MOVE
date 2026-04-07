@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Lock, User, ArrowRight } from 'lucide-react';
-import { apiLogin, apiRegister } from '../api';
+import { Mail, Lock, User, ArrowRight, Phone, KeyRound } from 'lucide-react';
+import { apiLogin, apiRegister, apiSendOtp, apiVerifyOtp } from '../api';
 
 interface LoginProps {
   onLoginSuccess: (userId: number, name: string) => void;
@@ -10,10 +10,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
 
   // Restore remembered email on mount
   useEffect(() => {
@@ -24,6 +29,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    // For signup, require OTP verification first
+    if (!isLogin && !otpVerified) {
+      setError('Please verify your phone number first.');
+      return;
+    }
     setLoading(true);
     try {
       const data = isLogin
@@ -50,6 +60,35 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  const handleSendOtp = async () => {
+    if (!phone.trim()) { setError('Enter your phone number first.'); return; }
+    setError('');
+    setOtpLoading(true);
+    try {
+      const res = await apiSendOtp(phone);
+      if (res.sent) { setOtpSent(true); }
+      else { setError(res.error ?? 'Failed to send OTP.'); }
+    } catch {
+      setError('Could not send OTP. Please try again.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setError('');
+    setOtpLoading(true);
+    try {
+      const res = await apiVerifyOtp(phone, otp);
+      if (res.verified) { setOtpVerified(true); }
+      else { setError('Incorrect code. Please try again.'); }
+    } catch {
+      setError('Verification failed. Please try again.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   return (
     <div className="container" style={{ padding: '80px 0', minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
       <div className="fade-in" style={{ width: '100%' }}>
@@ -64,21 +103,60 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {!isLogin && (
-            <div className="input-group">
-              <label>FULL NAME</label>
-              <div style={{ position: 'relative' }}>
-                <User size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--text-muted)' }} />
-                <input
-                  type="text"
-                  placeholder="Sipho Dlamini"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoComplete="name"
-                  style={{ paddingLeft: '48px' }}
-                  required
-                />
+            <>
+              <div className="input-group">
+                <label>FULL NAME</label>
+                <div style={{ position: 'relative' }}>
+                  <User size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--text-muted)' }} />
+                  <input type="text" placeholder="Sipho Dlamini" value={name}
+                    onChange={(e) => setName(e.target.value)} autoComplete="name"
+                    style={{ paddingLeft: '48px' }} required />
+                </div>
               </div>
-            </div>
+
+              <div className="input-group">
+                <label>PHONE NUMBER</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <Phone size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--text-muted)' }} />
+                    <input type="tel" placeholder="+27 82 555 0100" value={phone}
+                      onChange={(e) => { setPhone(e.target.value); setOtpSent(false); setOtpVerified(false); }}
+                      autoComplete="tel" disabled={otpVerified}
+                      style={{ paddingLeft: '48px', border: otpVerified ? '1px solid #34a853' : undefined }} required />
+                  </div>
+                  {!otpVerified && (
+                    <button type="button" onClick={handleSendOtp} disabled={otpLoading || !phone.trim()}
+                      style={{ padding: '0 16px', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, opacity: !phone.trim() ? 0.6 : 1 }}>
+                      {otpLoading ? '…' : otpSent ? 'Resend' : 'Send OTP'}
+                    </button>
+                  )}
+                  {otpVerified && (
+                    <div style={{ display: 'flex', alignItems: 'center', color: '#34a853', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>✓ Verified</div>
+                  )}
+                </div>
+              </div>
+
+              {otpSent && !otpVerified && (
+                <div className="input-group">
+                  <label>VERIFICATION CODE</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                      <KeyRound size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--text-muted)' }} />
+                      <input type="text" placeholder="123456" value={otp} maxLength={6}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        style={{ paddingLeft: '48px', letterSpacing: '0.2em', fontWeight: 700 }} />
+                    </div>
+                    <button type="button" onClick={handleVerifyOtp} disabled={otpLoading || otp.length < 6}
+                      style={{ padding: '0 16px', backgroundColor: 'var(--accent)', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', flexShrink: 0, opacity: otp.length < 6 ? 0.6 : 1 }}>
+                      {otpLoading ? '…' : 'Verify'}
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                    Code sent to {phone}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <div className="input-group">

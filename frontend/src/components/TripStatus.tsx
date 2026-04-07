@@ -90,7 +90,10 @@ const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
         });
         client.subscribe(`/topic/chat/${tripId}`, (msg) => {
           const data = JSON.parse(msg.body);
-          setMessages((prev) => [...prev, { sender: data.sender, text: data.text, time: data.time }]);
+          // Only add driver messages — rider messages are added locally on send
+          if (data.sender !== 'rider') {
+            setMessages((prev) => [...prev, { sender: data.sender, text: data.text, time: data.time }]);
+          }
         });
       },
     });
@@ -113,13 +116,14 @@ const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
 
   const sendMessage = () => {
     if (!chatInput.trim()) return;
-    const msg: ChatMessage = { sender: 'rider', text: chatInput.trim(), time: new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) };
+    const time = new Date().toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+    const msg: ChatMessage = { sender: 'rider', text: chatInput.trim(), time };
     setMessages((prev) => [...prev, msg]);
+    setChatInput('');
     stompRef.current?.publish({
       destination: `/app/chat/${tripId ?? 0}`,
       body: JSON.stringify({ sender: 'rider', text: msg.text }),
     });
-    setChatInput('');
   };
 
   const handleCall = () => { window.location.href = 'tel:+27825550100'; };

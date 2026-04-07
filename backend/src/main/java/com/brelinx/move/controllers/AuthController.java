@@ -30,6 +30,7 @@ public class AuthController {
         user.setEmail(req.getEmail());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setRole("rider");
+        if (req.getPhone() != null) user.setPhone(req.getPhone());
         userRepository.save(user);
         String token = jwtUtil.generateToken(user.getEmail(), user.getId());
         return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getName(), user.getEmail()));
