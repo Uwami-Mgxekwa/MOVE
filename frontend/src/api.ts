@@ -91,3 +91,36 @@ export const apiGeneratePayFastPayment = (amount: number, itemName: string) =>
     headers: getHeaders(),
     body: JSON.stringify({ amount, itemName }),
   }).then((r) => r.json());
+
+// Promo codes
+export const apiValidatePromo = (code: string) =>
+  fetch(`${BASE_URL}/promo/validate/${code}`, { headers: getHeaders() }).then((r) => r.json());
+
+// Saved places
+export const apiGetSavedPlaces = (userId: number) =>
+  fetch(`${BASE_URL}/places/user/${userId}`, { headers: getHeaders() }).then((r) => r.json());
+
+export const apiSavePlace = (place: { userId: number; label: string; address: string }) =>
+  fetch(`${BASE_URL}/places`, {
+    method: 'POST', headers: getHeaders(), body: JSON.stringify(place),
+  }).then((r) => r.json());
+
+export const apiDeletePlace = (id: number) =>
+  fetch(`${BASE_URL}/places/${id}`, { method: 'DELETE', headers: getHeaders() });
+
+// Notifications
+export const apiGetNotifications = (userId: number) =>
+  fetch(`${BASE_URL}/notifications/user/${userId}`, { headers: getHeaders() }).then((r) => r.json());
+
+export const apiGetUnreadCount = (userId: number) =>
+  fetch(`${BASE_URL}/notifications/user/${userId}/unread-count`, { headers: getHeaders() }).then((r) => r.json());
+
+export const apiMarkAllRead = (userId: number) =>
+  fetch(`${BASE_URL}/notifications/user/${userId}/read-all`, { method: 'PUT', headers: getHeaders() });
+
+// Ratings
+export const apiRateTrip = (tripId: number, riderId: number, stars: number, comment?: string) =>
+  fetch(`${BASE_URL}/ratings`, {
+    method: 'POST', headers: getHeaders(),
+    body: JSON.stringify({ tripId, riderId, stars, comment }),
+  }).then((r) => r.json());

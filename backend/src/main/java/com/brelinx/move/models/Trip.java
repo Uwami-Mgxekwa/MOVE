@@ -24,6 +24,14 @@ public class Trip {
     @Column(nullable = false)
     private Long riderId;
 
+    private boolean shared = false;
+    private Integer maxPassengers = 1;
+
+    public boolean isShared() { return shared; }
+    public void setShared(boolean shared) { this.shared = shared; }
+    public Integer getMaxPassengers() { return maxPassengers; }
+    public void setMaxPassengers(Integer maxPassengers) { this.maxPassengers = maxPassengers; }
+
     public Trip() {}
 
     public Trip(Long id, String originCity, String destinationCity, String status, Long driverId, Long riderId) {
