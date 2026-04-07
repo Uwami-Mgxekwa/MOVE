@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { MapPin, Navigation, Users, Shield, Car, Bus, Star, Tag, CheckCircle } from 'lucide-react';
+import { MapPin, Navigation, Shield, Car, Bus, Star, Tag, CheckCircle } from 'lucide-react';
 import { apiCreateTrip, apiGeneratePayFastPayment, apiValidatePromo } from '../api';
 import PayFastPayment from './PayFastPayment';
 
 const SERVICES = [
-  { name: 'MOVE Go', icon: <Car size={22} />, price: 85, label: 'R85', desc: 'Affordable, everyday rides' },
-  { name: 'MOVE XL', icon: <Bus size={22} />, price: 145, label: 'R145', desc: 'Larger vehicles for groups' },
-  { name: 'MOVE Black', icon: <Star size={22} />, price: 210, label: 'R210', desc: 'Premium luxury experience' },
+  { name: 'MOVE Go', icon: <Car size={22} />, price: 85, label: 'R85', desc: 'Affordable, everyday rides', seats: 4 },
+  { name: 'MOVE XL', icon: <Bus size={22} />, price: 145, label: 'R145', desc: 'Larger vehicles for groups', seats: 6 },
+  { name: 'MOVE Black', icon: <Star size={22} />, price: 210, label: 'R210', desc: 'Premium luxury experience', seats: 4 },
 ];
 
 interface BookingFormProps {
@@ -16,11 +16,7 @@ interface BookingFormProps {
 }
 
 const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', destination = '' }) => {
-  const [pickupVal, setPickupVal] = useState(pickup || '');
-  const [destinationVal, setDestinationVal] = useState(destination || '');
-  const [passengers, setPassengers] = useState(1);
   const [selectedService, setSelectedService] = useState(0);
-  const [shareRide, setShareRide] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'payfast' | 'cash'>('payfast');
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -50,15 +46,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pickupVal.trim() || !destinationVal.trim()) {
-      setError('Please enter pickup and destination.');
-      return;
-    }
     setError('');
     setLoading(true);
     try {
       const riderId = Number(localStorage.getItem('userId'));
-      const trip = await apiCreateTrip({ originCity: pickupVal, destinationCity: destinationVal, riderId });
+      const trip = await apiCreateTrip({ originCity: pickup, destinationCity: destination, riderId });
       if (!trip.id) { setError('Failed to book ride. Please try again.'); setLoading(false); return; }
 
       if (paymentMethod === 'payfast') {
@@ -78,47 +70,20 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
   return (
     <div className="container fade-in" style={{ padding: '24px 0 80px' }}>
 
-      {/* Route inputs */}
-      <div className="card" style={{ padding: '20px', marginBottom: '16px' }}>
-        <div style={{ position: 'relative' }}>
-          <MapPin size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--accent)', flexShrink: 0 }} />
-          <input
-            value={pickupVal}
-            onChange={(e) => setPickupVal(e.target.value)}
-            placeholder="Pickup location"
-            required
-            style={{ width: '100%', padding: '12px 12px 12px 36px', border: '1px solid #eee', borderRadius: '10px', fontSize: '15px', fontFamily: 'inherit', backgroundColor: '#f9f9f9' }}
-          />
+      {/* Route summary — read only */}
+      <div className="card" style={{ padding: '16px 20px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '10px' }}>
+          <MapPin size={16} color="var(--accent)" style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '14px', fontWeight: 600 }}>{pickup || 'Pickup location'}</span>
         </div>
-        <div style={{ height: '1px', backgroundColor: '#eee', margin: '10px 0' }} />
-        <div style={{ position: 'relative' }}>
-          <Navigation size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: '#000' }} />
-          <input
-            value={destinationVal}
-            onChange={(e) => setDestinationVal(e.target.value)}
-            placeholder="Where to?"
-            required
-            style={{ width: '100%', padding: '12px 12px 12px 36px', border: '1px solid #eee', borderRadius: '10px', fontSize: '15px', fontFamily: 'inherit' }}
-          />
+        <div style={{ height: '1px', backgroundColor: '#eee', marginLeft: '28px' }} />
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '10px' }}>
+          <Navigation size={16} color="#000" style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '14px', fontWeight: 600 }}>{destination || 'Destination'}</span>
         </div>
       </div>
 
       <form onSubmit={handleBooking}>
-
-        {/* Passengers */}
-        <div className="card" style={{ padding: '20px', marginBottom: '16px' }}>
-          <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>PASSENGERS</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px' }}>
-            <Users size={18} color="var(--text-muted)" />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <button type="button" onClick={() => setPassengers(Math.max(1, passengers - 1))}
-                style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #eee', backgroundColor: '#f9f9f9', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
-              <span style={{ fontSize: '18px', fontWeight: 800, minWidth: '24px', textAlign: 'center' }}>{passengers}</span>
-              <button type="button" onClick={() => setPassengers(Math.min(6, passengers + 1))}
-                style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid #eee', backgroundColor: '#f9f9f9', fontSize: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>+</button>
-            </div>
-          </div>
-        </div>
 
         {/* Service type */}
         <div className="card" style={{ padding: '20px', marginBottom: '16px' }}>
@@ -132,7 +97,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '15px', fontWeight: 800 }}>{service.name}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{service.desc}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{service.desc} • up to {service.seats} seats</div>
                 </div>
                 <div style={{ fontSize: '16px', fontWeight: 900 }}>{service.label}</div>
               </div>
@@ -165,18 +130,15 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
           </div>
         </div>
 
-        {/* Ride sharing + promo in one card */}
+        {/* Promo + coming soon */}
         <div className="card" style={{ padding: '20px', marginBottom: '16px' }}>
-          {/* Share ride toggle */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          {/* Share ride — coming soon */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', opacity: 0.45 }}>
             <div>
               <div style={{ fontWeight: 800, fontSize: '14px' }}>Share this ride</div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>Split the fare with other riders</div>
             </div>
-            <button type="button" onClick={() => setShareRide(!shareRide)}
-              style={{ width: '48px', height: '28px', borderRadius: '14px', backgroundColor: shareRide ? 'var(--accent)' : '#ddd', border: 'none', cursor: 'pointer', position: 'relative' }}>
-              <div style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#fff', position: 'absolute', top: '3px', left: shareRide ? '23px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
-            </button>
+            <span style={{ fontSize: '11px', fontWeight: 800, backgroundColor: '#f0f0f0', color: '#888', padding: '4px 10px', borderRadius: '20px' }}>COMING SOON</span>
           </div>
 
           {/* Promo code */}
@@ -198,7 +160,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', desti
           {promoApplied && <div style={{ fontSize: '12px', color: '#34a853', marginTop: '6px', fontWeight: 600 }}>✓ {promoDiscount}% discount applied!</div>}
         </div>
 
-        {/* Safety notice */}
+        {/* Safety */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', padding: '12px 16px', backgroundColor: '#e6f4ea', borderRadius: '12px', color: '#1e7e34' }}>
           <Shield size={16} />
           <span style={{ fontSize: '13px', fontWeight: 700 }}>Your trip is protected with MOVE Safety.</span>

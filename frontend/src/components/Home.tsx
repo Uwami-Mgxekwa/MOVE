@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Navigation, Clock, Star, Loader, Plus, X } from 'lucide-react';
+import { Search, MapPin, Navigation, Loader, Plus, X } from 'lucide-react';
 import { apiGetSavedPlaces, apiSavePlace, apiDeletePlace } from '../api';
 
 interface HomeProps {
