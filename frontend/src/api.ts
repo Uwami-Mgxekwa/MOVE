@@ -23,6 +23,13 @@ export const apiLogin = (email: string, password: string) =>
     body: JSON.stringify({ email, password }),
   }).then((r) => r.json());
 
+export const apiGoogleLogin = (idToken: string) =>
+  fetch(`${BASE_URL}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken }),
+  }).then((r) => r.json());
+
 // Trips
 export const apiCreateTrip = (trip: {
   originCity: string;
@@ -75,4 +82,12 @@ export const apiUpdateUser = (id: number, data: { name: string; email: string })
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(data),
+  }).then((r) => r.json());
+
+// Stripe
+export const apiCreatePaymentIntent = (amount: number, currency = 'zar') =>
+  fetch(`${BASE_URL}/payments/stripe/create-intent`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ amount: amount * 100, currency }), // convert to cents
   }).then((r) => r.json());

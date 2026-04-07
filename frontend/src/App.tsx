@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [userId, setUserId] = useState<number | null>(null);
   const [userName, setUserName] = useState('');
+  const [activeTripId, setActiveTripId] = useState<number | null>(null);
 
   const handleLoginSuccess = (id: number, name: string) => {
     setUserId(id);
@@ -33,9 +34,9 @@ const App: React.FC = () => {
       case 'account':
         return <AccountPage onLogout={() => setIsAuthenticated(false)} />;
       case 'booking':
-        return <BookingForm onConfirm={() => setCurrentPage('trip')} />;
+        return <BookingForm onConfirm={(tripId) => { setActiveTripId(tripId); setCurrentPage('trip'); }} />;
       case 'trip':
-        return <TripStatus />;
+        return <TripStatus tripId={activeTripId} />;
       default:
         return <Home onBookRide={() => setCurrentPage('booking')} />;
     }

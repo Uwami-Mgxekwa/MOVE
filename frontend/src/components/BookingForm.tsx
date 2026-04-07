@@ -1,24 +1,52 @@
 import React, { useState } from 'react';
 import { MapPin, Navigation, Calendar, Clock, Users, Shield, Car, Bus, Star } from 'lucide-react';
+import { apiCreateTrip } from '../api';
+
+const SERVICES = [
+  { name: 'MOVE Go', icon: <Car size={22} />, price: 85, label: 'R85', desc: 'Affordable, everyday rides' },
+  { name: 'MOVE XL', icon: <Bus size={22} />, price: 145, label: 'R145', desc: 'Larger vehicles for groups' },
+  { name: 'MOVE Black', icon: <Star size={22} />, price: 210, label: 'R210', desc: 'Premium luxury experience' },
+];
 
 interface BookingFormProps {
-  onConfirm: () => void;
+  onConfirm: (tripId: number) => void;
+  pickup?: string;
+  destination?: string;
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ onConfirm }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ onConfirm, pickup = '', destination = '' }) => {
   const [formData, setFormData] = useState({
-    pickup: 'Cape Town International Airport',
-    destination: 'Waterfront, Cape Town',
-    date: '2026-04-24',
+    pickup: pickup || 'Cape Town International Airport',
+    destination: destination || 'Waterfront, Cape Town',
+    date: new Date().toISOString().split('T')[0],
     time: '14:30',
     passengers: 1,
   });
   const [selectedService, setSelectedService] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleBooking = (e: React.FormEvent) => {
+  const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Booking trip with data:', formData);
-    onConfirm();
+    setError('');
+    setLoading(true);
+    try {
+      const riderId = Number(localStorage.getItem('userId'));
+      const trip = await apiCreateTrip({
+        originCity: formData.pickup,
+        destinationCity: formData.destination,
+        riderId,
+      });
+      if (trip.id) {
+        onConfirm(trip.id);
+      } else {
+        setError('Failed to book ride. Please try again.');
+      }
+    } catch {
+      setError('Could not connect to server. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -100,11 +128,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm }) => {
           <div style={{ margin: '32px 0 24px' }}>
             <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '12px', display: 'block' }}>CHOOSE SERVICE</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {[
-                { name: 'MOVE Go', icon: <Car size={22} />, price: 'R85', desc: 'Affordable, everyday rides' },
-                { name: 'MOVE XL', icon: <Bus size={22} />, price: 'R145', desc: 'Larger vehicles for groups' },
-                { name: 'MOVE Black', icon: <Star size={22} />, price: 'R210', desc: 'Premium luxury experience' }
-              ].map((service, index) => (
+              {SERVICES.map((service, index) => (
                 <div
                   key={service.name}
                   onClick={() => setSelectedService(index)}
@@ -126,9 +150,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm }) => {
                      <div style={{ fontSize: '15px', fontWeight: 800 }}>{service.name}</div>
                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{service.desc}</div>
                   </div>
-                  <div style={{ fontSize: '16px', fontWeight: 900 }}>{service.price}</div>
+                  <div style={{ fontSize: '16px', fontWeight: 900 }}>{service.label}</div>
                 </div>
               ))}
+            </div>
             </div>
           </div>
 
@@ -140,8 +165,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ onConfirm }) => {
              <span style={{ fontSize: '12px', fontWeight: 700 }}>Your trip is protected with MOVE Safety.</span>
           </div>
 
-          <button type="submit" className="btn btn-accent" style={{ height: '60px', borderRadius: '16px' }}>
-            Confirm Move
+          {error && <div style={{ fontSize: '13px', color: 'var(--error)', textAlign: 'center', fontWeight: 600, marginBottom: '12px' }}>{error}</div>}
+
+          <button type="submit" className="btn btn-accent" style={{ height: '60px', borderRadius: '16px' }} disabled={loading}>
+            {loading ? 'Booking…' : `Confirm Move — R${SERVICES[selectedService].price}`}
           </button>
         </form>
       </div>

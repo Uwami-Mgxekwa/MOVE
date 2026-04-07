@@ -1,10 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShieldCheck, MessageCircle, Phone, XCircle, Info, ChevronRight, Star, X } from 'lucide-react';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
-const TripStatus: React.FC = () => {
+interface TripStatusProps {
+  tripId?: number | null;
+}
+
+const TripStatus: React.FC<TripStatusProps> = ({ tripId }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [cancelled, setCancelled] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [eta, setEta] = useState(4);
+  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const stompRef = useRef<Client | null>(null);
+
+  useEffect(() => {
+    if (!tripId) return;
+    const client = new Client({
+      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      onConnect: () => {
+        client.subscribe(`/topic/trip/${tripId}`, (msg) => {
+          const data = JSON.parse(msg.body);
+          if (data.eta !== undefined) setEta(data.eta);
+          if (data.lat && data.lng) setDriverLocation({ lat: data.lat, lng: data.lng });
+        });
+      },
+    });
+    client.activate();
+    stompRef.current = client;
+    return () => { client.deactivate(); };
+  }, [tripId]);
+
+  // Countdown timer simulation when no real driver connected
+  useEffect(() => {
+    if (eta <= 0) return;
+    const timer = setInterval(() => setEta((e) => Math.max(0, e - 1)), 60000);
+    return () => clearInterval(timer);
+  }, [eta]);
 
   const handleCall = () => { window.location.href = 'tel:+27825550100'; };
   const handleMessage = () => { alert('In-app messaging coming soon.'); };
@@ -28,7 +61,7 @@ const TripStatus: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 800 }}>Ongoing Trip</h2>
           <span style={{ padding: '6px 12px', backgroundColor: 'var(--accent-transparent)', color: 'var(--accent)', borderRadius: '20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Arriving in 4 min
+            {eta > 0 ? `Arriving in ${eta} min` : 'Driver arriving now'}
           </span>
         </div>
 
