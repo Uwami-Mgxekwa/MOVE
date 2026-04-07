@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
-import { apiLogin, apiRegister, apiGoogleLogin } from '../api';
+import { apiLogin, apiRegister } from '../api';
 
 interface LoginProps {
   onLoginSuccess: (userId: number, name: string) => void;
@@ -12,8 +11,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLogin, setIsLogin] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Restore remembered email on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('rememberedEmail');
+    if (saved) { setEmail(saved); setRememberMe(true); }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +34,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('userId', String(data.userId));
         localStorage.setItem('userName', data.name);
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email);
+        } else {
+          localStorage.removeItem('rememberedEmail');
+        }
         onLoginSuccess(data.userId, data.name);
       } else {
         setError(data.message ?? 'Something went wrong. Please try again.');
@@ -62,6 +73,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   placeholder="Sipho Dlamini"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
                   style={{ paddingLeft: '48px' }}
                   required
                 />
@@ -78,6 +90,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 style={{ paddingLeft: '48px' }}
                 required
               />
@@ -101,11 +114,21 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
 
           {isLogin && (
-            <div style={{ textAlign: 'right', marginTop: '-12px' }}>
-              <button
-                type="button"
-                style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}
-              >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '-8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                <div
+                  onClick={() => setRememberMe(!rememberMe)}
+                  style={{
+                    width: '18px', height: '18px', borderRadius: '5px', border: `2px solid ${rememberMe ? 'var(--accent)' : '#ccc'}`,
+                    backgroundColor: rememberMe ? 'var(--accent)' : '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer'
+                  }}
+                >
+                  {rememberMe && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </div>
+                Remember me
+              </label>
+              <button type="button" style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
                 Forgot Password?
               </button>
             </div>
@@ -121,51 +144,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           )}
         </form>
 
-        <div style={{ margin: '32px 0', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }}></div>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>OR</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }}></div>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <GoogleLogin
-            onSuccess={async (credentialResponse) => {
-              if (!credentialResponse.credential) return;
-              setLoading(true);
-              try {
-                const data = await apiGoogleLogin(credentialResponse.credential);
-                if (data.token) {
-                  localStorage.setItem('token', data.token);
-                  localStorage.setItem('userId', String(data.userId));
-                  localStorage.setItem('userName', data.name);
-                  onLoginSuccess(data.userId, data.name);
-                } else {
-                  setError('Google sign-in failed. Please try again.');
-                }
-              } catch {
-                setError('Could not connect to server.');
-              } finally {
-                setLoading(false);
-              }
-            }}
-            onError={() => setError('Google sign-in failed.')}
-            width="400"
-            text={isLogin ? 'signin_with' : 'signup_with'}
-          />
-        </div>
-
         <div style={{ marginTop: '40px', textAlign: 'center', fontSize: '14px' }}>
           <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
             {isLogin ? "Don't have an account? " : 'Already have an account? '}
           </span>
           <button
             onClick={() => setIsLogin(!isLogin)}
-            style={{
-              color: 'var(--accent)',
-              fontWeight: 700,
-              padding: 0,
-              marginLeft: '4px',
-            }}
+            style={{ color: 'var(--accent)', fontWeight: 700, padding: 0, marginLeft: '4px' }}
           >
             {isLogin ? 'Sign Up' : 'Log In'}
           </button>
