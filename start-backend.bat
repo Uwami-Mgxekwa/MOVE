@@ -10,3 +10,8 @@ for /f "tokens=1,2 delims==" %%a in (backend\.env) do (
 echo Starting MOVE backend...
 cd backend
 mvn spring-boot:run
+if errorlevel 1 (
+    echo.
+    echo Backend failed to start. See error above.
+    pause
+)

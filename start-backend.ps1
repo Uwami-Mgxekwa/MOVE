@@ -10,4 +10,9 @@ Get-Content "backend\.env" | ForEach-Object {
 
 Write-Host "Starting MOVE backend..." -ForegroundColor Cyan
 Set-Location backend
-& mvn spring-boot:run
+& mvn clean spring-boot:run
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "`nBackend failed to start. See error above." -ForegroundColor Red
+    Read-Host "Press Enter to close"
+}

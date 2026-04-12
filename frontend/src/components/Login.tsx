@@ -272,15 +272,15 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             )}
 
             {forgotStep === 'otp' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form onSubmit={(e) => { e.preventDefault(); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <input value={forgotOtp} onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="6-digit code" maxLength={6}
+                  placeholder="6-digit code" maxLength={6} autoComplete="one-time-code"
                   style={{ width: '100%', padding: '14px 16px', border: '1px solid #e2e2e2', borderRadius: '12px', fontSize: '20px', fontFamily: 'inherit', letterSpacing: '0.3em', textAlign: 'center', fontWeight: 700 }} />
                 <input value={forgotNewPassword} onChange={(e) => setForgotNewPassword(e.target.value)}
                   placeholder="New password" type="password" autoComplete="new-password"
                   style={{ width: '100%', padding: '14px 16px', border: '1px solid #e2e2e2', borderRadius: '12px', fontSize: '15px', fontFamily: 'inherit' }} />
                 {forgotError && <div style={{ fontSize: '13px', color: '#ea4335' }}>{forgotError}</div>}
-                <button onClick={async () => {
+                <button type="submit" onClick={async () => {
                   setForgotLoading(true); setForgotError('');
                   const res = await apiConfirmPasswordReset(forgotPhone, forgotOtp, forgotNewPassword).catch(() => ({ success: false }));
                   setForgotLoading(false);
@@ -289,7 +289,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 }} className="btn btn-primary" disabled={forgotLoading || forgotOtp.length < 6 || !forgotNewPassword.trim()}>
                   {forgotLoading ? 'Resetting…' : 'Reset Password'}
                 </button>
-              </div>
+              </form>
             )}
 
             {forgotStep === 'done' && (
