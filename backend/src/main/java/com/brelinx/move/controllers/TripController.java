@@ -3,6 +3,7 @@ package com.brelinx.move.controllers;
 import com.brelinx.move.models.Trip;
 import com.brelinx.move.repositories.TripRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,6 +15,9 @@ public class TripController {
 
     @Autowired
     private TripRepository tripRepository;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @GetMapping
     public List<Trip> getAllTrips() {
@@ -40,6 +44,11 @@ public class TripController {
     public Trip updateTripStatus(@PathVariable Long id, @RequestParam String status) {
         Trip trip = tripRepository.findById(id).orElseThrow(() -> new RuntimeException("Trip not found"));
         trip.setStatus(status);
-        return tripRepository.save(trip);
+        tripRepository.save(trip);
+
+        // Push WebSocket notification to rider
+        messagingTemplate.convertAndSend("/topic/trip/" + id,
+                java.util.Map.of("status", status, "tripId", id));
+        return trip;
     }
 }

@@ -1,5 +1,8 @@
 package com.brelinx.move.controllers;
 
+import com.brelinx.move.models.Payment;
+import com.brelinx.move.repositories.PaymentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +18,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/payments/payfast")
 @CrossOrigin(origins = "*")
 public class PayFastController {
+
+    @Autowired private PaymentRepository paymentRepository;
 
     @Value("${payfast.merchant.id}")
     private String merchantId;
@@ -34,9 +39,9 @@ public class PayFastController {
             String amount = new BigDecimal(body.get("amount").toString())
                     .setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
             String itemName = body.getOrDefault("itemName", "MOVE Ride").toString();
-            String returnUrl = body.getOrDefault("returnUrl", "http://localhost:5173/payment/success").toString();
-            String cancelUrl = body.getOrDefault("cancelUrl", "http://localhost:5173/payment/cancel").toString();
-            String notifyUrl = body.getOrDefault("notifyUrl", "http://localhost:8080/payments/payfast/notify").toString();
+            String returnUrl = body.getOrDefault("returnUrl", "http://localhost:5173").toString();
+            String cancelUrl = body.getOrDefault("cancelUrl", "http://localhost:5173").toString();
+            String notifyUrl = "https://your-backend-domain.com/payments/payfast/notify";
 
             LinkedHashMap<String, String> params = new LinkedHashMap<>();
             params.put("merchant_id", merchantId);
@@ -47,29 +52,43 @@ public class PayFastController {
             params.put("amount", amount);
             params.put("item_name", itemName);
 
-            // Generate signature
             String queryString = params.entrySet().stream()
                     .map(e -> e.getKey() + "=" + urlEncode(e.getValue()))
                     .collect(Collectors.joining("&"));
             queryString += "&passphrase=" + urlEncode(passphrase);
-            String signature = md5(queryString);
-            params.put("signature", signature);
+            params.put("signature", md5(queryString));
 
-            String host = sandbox ? "https://sandbox.payfast.co.za/eng/process" : "https://www.payfast.co.za/eng/process";
+            String host = sandbox
+                    ? "https://sandbox.payfast.co.za/eng/process"
+                    : "https://www.payfast.co.za/eng/process";
 
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("paymentUrl", host);
-            response.put("params", params);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of("paymentUrl", host, "params", params));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
 
+    // PayFast ITN — called by PayFast server after payment
     @PostMapping("/notify")
-    public ResponseEntity<String> notify(@RequestBody Map<String, String> payload) {
-        // PayFast ITN (Instant Transaction Notification) handler
-        // Verify and update payment status here
+    public ResponseEntity<String> notify(@RequestParam Map<String, String> payload) {
+        String paymentStatus = payload.getOrDefault("payment_status", "");
+        String itemName = payload.getOrDefault("item_name", "");
+
+        // Extract tripId from item_name if encoded, or use m_payment_id
+        String mPaymentId = payload.getOrDefault("m_payment_id", "");
+
+        if ("COMPLETE".equals(paymentStatus)) {
+            // Try to find and update payment by tripId
+            try {
+                if (!mPaymentId.isBlank()) {
+                    Long tripId = Long.parseLong(mPaymentId);
+                    paymentRepository.findByTripId(tripId).ifPresent(p -> {
+                        p.setStatus("PAID");
+                        paymentRepository.save(p);
+                    });
+                }
+            } catch (NumberFormatException ignored) {}
+        }
         return ResponseEntity.ok("OK");
     }
 

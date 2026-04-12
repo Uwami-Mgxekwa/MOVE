@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Navigation, Loader, Plus, X } from 'lucide-react';
 import { apiGetSavedPlaces, apiSavePlace, apiDeletePlace } from '../api';
+import AddressInput from './AddressInput';
 
 interface HomeProps {
   onBookRide: (pickup: string, destination: string) => void;
@@ -82,56 +83,14 @@ const Home: React.FC<HomeProps> = ({ onBookRide, userId }) => {
           <span style={{ color: 'var(--accent)' }}>MOVE</span> you today?
         </h1>
 
-        <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+        <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'visible' }}>
           <form onSubmit={handleSearch}>
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ position: 'relative' }}>
-                {locating
-                  ? <Loader size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: '#6a0dad', animation: 'spin 1s linear infinite' }} />
-                  : <MapPin size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: '#6a0dad' }} />
-                }
-                <input
-                  type="text"
-                  placeholder={locating ? 'Getting your location…' : 'Enter pickup location'}
-                  value={fromCity}
-                  onChange={(e) => { setFromCity(e.target.value); setLocError(''); }}
-                  style={{
-                    width: '100%',
-                    padding: '16px 16px 16px 52px',
-                    border: `1px solid ${locError ? '#f87171' : '#eee'}`,
-                    borderRadius: '12px',
-                    fontSize: '16px',
-                    backgroundColor: '#f9f9f9',
-                    fontFamily: 'inherit'
-                  }}
-                  required
-                />
-                {locError && (
-                  <div style={{ fontSize: '12px', color: '#f87171', marginTop: '6px', paddingLeft: '4px' }}>{locError}</div>
-                )}
-              </div>
-              
-              <div style={{ position: 'absolute', height: '24px', width: '2px', backgroundColor: '#e2e2e2', left: '24px', top: '48px', zIndex: 1 }}></div>
-
-              <div style={{ position: 'relative' }}>
-                <Navigation size={18} style={{ position: 'absolute', left: '16px', top: '16px', color: '#000' }} />
-                <input
-                  type="text"
-                  placeholder="Enter destination"
-                  value={toCity}
-                  onChange={(e) => setToCity(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '16px 16px 16px 52px',
-                    border: '1px solid #eee',
-                    borderRadius: '12px',
-                    fontSize: '16px',
-                    backgroundColor: '#ffffff',
-                    fontFamily: 'inherit'
-                  }}
-                  required
-                />
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <AddressInput value={fromCity} onChange={(v) => { setFromCity(v); setLocError(''); }}
+                placeholder={locating ? 'Getting your location…' : 'Enter pickup location'} icon="pickup" />
+              {locError && <div style={{ fontSize: '12px', color: '#f87171', paddingLeft: '4px' }}>{locError}</div>}
+              <div style={{ height: '1px', backgroundColor: '#eee' }} />
+              <AddressInput value={toCity} onChange={setToCity} placeholder="Where to?" icon="destination" />
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ marginTop: '24px' }}>

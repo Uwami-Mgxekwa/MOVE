@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, CreditCard, ShieldCheck, Settings, LogOut, ChevronRight, Mail, Phone, Sun, Moon, Monitor, X, Save, Plus, Lock } from 'lucide-react';
+import { apiUpdateUser } from '../api';
 
 type Theme = 'light' | 'dark' | 'device';
 type Modal = 'preferences' | 'personal' | 'payment' | 'safety' | null;
@@ -125,6 +126,14 @@ const PaymentSheet: React.FC = () => {
 const AccountPage: React.FC<AccountPageProps> = ({ onLogout }) => {
   const [modal, setModal] = useState<Modal>(null);
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) ?? 'device');
+  const userId = Number(localStorage.getItem('userId'));
+  const [profileName, setProfileName] = useState(localStorage.getItem('userName') ?? '');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [emergencyName, setEmergencyName] = useState(localStorage.getItem('emergencyName') ?? '');
+  const [emergencyPhone, setEmergencyPhone] = useState(localStorage.getItem('emergencyPhone') ?? '');
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
 
   useEffect(() => {
     const root = document.documentElement;
@@ -198,12 +207,19 @@ const AccountPage: React.FC<AccountPageProps> = ({ onLogout }) => {
       {modal === 'personal' && (
         <SheetWrapper onClose={() => setModal(null)} title="Personal Information" subtitle="Update your profile details">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div><label style={labelStyle}>Full Name</label><input style={inputStyle} defaultValue="Thabo Nkosi" /></div>
-            <div><label style={labelStyle}>Email Address</label><input style={inputStyle} type="email" defaultValue="thabo@example.com" /></div>
-            <div><label style={labelStyle}>Phone Number</label><input style={inputStyle} type="tel" defaultValue="+27 82 555 0100" /></div>
-            <div><label style={labelStyle}>Home Address</label><input style={inputStyle} defaultValue="42 Residential Ave, Gardens, Cape Town" /></div>
-            <button onClick={() => setModal(null)} className="btn btn-primary" style={{ marginTop: '8px', gap: '10px' }}>
-              <Save size={18} /> Save Changes
+            <div><label style={labelStyle}>Full Name</label><input style={inputStyle} value={profileName} onChange={(e) => setProfileName(e.target.value)} /></div>
+            <div><label style={labelStyle}>Email Address</label><input style={inputStyle} type="email" value={profileEmail} onChange={(e) => setProfileEmail(e.target.value)} placeholder="your@email.com" /></div>
+            <div><label style={labelStyle}>Phone Number</label><input style={inputStyle} type="tel" value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} placeholder="+27 82 555 0100" /></div>
+            {saveMsg && <div style={{ fontSize: '13px', color: '#34a853', fontWeight: 600 }}>{saveMsg}</div>}
+            <button onClick={async () => {
+              setSaveLoading(true); setSaveMsg('');
+              await apiUpdateUser(userId, { name: profileName, email: profileEmail }).catch(() => {});
+              localStorage.setItem('userName', profileName);
+              setSaveMsg('Changes saved!');
+              setSaveLoading(false);
+              setTimeout(() => { setSaveMsg(''); setModal(null); }, 1200);
+            }} className="btn btn-primary" style={{ marginTop: '8px', gap: '10px' }} disabled={saveLoading}>
+              <Save size={18} /> {saveLoading ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         </SheetWrapper>
@@ -218,13 +234,17 @@ const AccountPage: React.FC<AccountPageProps> = ({ onLogout }) => {
       {modal === 'safety' && (
         <SheetWrapper onClose={() => setModal(null)} title="Safety & Emergency" subtitle="Your safety contacts">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div><label style={labelStyle}>Emergency Contact Name</label><input style={inputStyle} defaultValue="Nomsa Dlamini" /></div>
-            <div><label style={labelStyle}>Emergency Contact Number</label><input style={inputStyle} type="tel" defaultValue="+27 83 555 0199" /></div>
+            <div><label style={labelStyle}>Emergency Contact Name</label><input style={inputStyle} value={emergencyName} onChange={(e) => setEmergencyName(e.target.value)} placeholder="Nomsa Dlamini" /></div>
+            <div><label style={labelStyle}>Emergency Contact Number</label><input style={inputStyle} type="tel" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} placeholder="+27 83 555 0199" /></div>
             <div style={{ padding: '14px', backgroundColor: '#e6f4ea', borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <ShieldCheck size={18} color="#1e7e34" style={{ flexShrink: 0, marginTop: '2px' }} />
               <span style={{ fontSize: '13px', fontWeight: 600, color: '#1e7e34' }}>All your trips are monitored by MOVE Safety. Your emergency contact will be notified if anything unusual is detected.</span>
             </div>
-            <button onClick={() => setModal(null)} className="btn btn-primary" style={{ gap: '10px' }}>
+            <button onClick={() => {
+              localStorage.setItem('emergencyName', emergencyName);
+              localStorage.setItem('emergencyPhone', emergencyPhone);
+              setModal(null);
+            }} className="btn btn-primary" style={{ gap: '10px' }}>
               <Save size={18} /> Save Contact
             </button>
           </div>

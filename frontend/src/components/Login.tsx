@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Lock, User, ArrowRight, Phone, KeyRound } from 'lucide-react';
-import { apiLogin, apiRegister, apiSendOtp, apiVerifyOtp } from '../api';
+import { apiLogin, apiRegister, apiSendOtp, apiVerifyOtp, apiSendPasswordReset, apiConfirmPasswordReset } from '../api';
 
 interface LoginProps {
   onLoginSuccess: (userId: number, name: string) => void;
@@ -15,6 +15,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotPhone, setForgotPhone] = useState('');
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotStep, setForgotStep] = useState<'phone' | 'otp' | 'done'>('phone');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -206,7 +213,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </div>
                 Remember me
               </label>
-              <button type="button" style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
+              <button type="button" onClick={() => setShowForgot(true)} style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
                 Forgot Password?
               </button>
             </div>
@@ -234,6 +241,68 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </button>
         </div>
       </div>
+
+      {/* Forgot Password Sheet */}
+      {showForgot && (
+        <div onClick={() => setShowForgot(false)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', backgroundColor: '#fff', borderRadius: '24px 24px 0 0', padding: '32px 24px 48px' }}>
+            <div style={{ fontWeight: 900, fontSize: '18px', marginBottom: '6px' }}>Reset Password</div>
+            <div style={{ fontSize: '13px', color: '#a1a1a1', marginBottom: '28px' }}>
+              {forgotStep === 'phone' && 'Enter the phone number linked to your account'}
+              {forgotStep === 'otp' && 'Enter the code sent to your phone and your new password'}
+              {forgotStep === 'done' && 'Your password has been reset successfully'}
+            </div>
+
+            {forgotStep === 'phone' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <input value={forgotPhone} onChange={(e) => setForgotPhone(e.target.value)}
+                  placeholder="+27 82 555 0100" type="tel"
+                  style={{ width: '100%', padding: '14px 16px', border: '1px solid #e2e2e2', borderRadius: '12px', fontSize: '15px', fontFamily: 'inherit' }} />
+                {forgotError && <div style={{ fontSize: '13px', color: '#ea4335' }}>{forgotError}</div>}
+                <button onClick={async () => {
+                  setForgotLoading(true); setForgotError('');
+                  const res = await apiSendPasswordReset(forgotPhone).catch(() => ({ sent: false }));
+                  setForgotLoading(false);
+                  if (res.sent) setForgotStep('otp');
+                  else setForgotError('Could not send code. Please try again.');
+                }} className="btn btn-primary" disabled={forgotLoading || !forgotPhone.trim()}>
+                  {forgotLoading ? 'Sending…' : 'Send Reset Code'}
+                </button>
+              </div>
+            )}
+
+            {forgotStep === 'otp' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <input value={forgotOtp} onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="6-digit code" maxLength={6}
+                  style={{ width: '100%', padding: '14px 16px', border: '1px solid #e2e2e2', borderRadius: '12px', fontSize: '20px', fontFamily: 'inherit', letterSpacing: '0.3em', textAlign: 'center', fontWeight: 700 }} />
+                <input value={forgotNewPassword} onChange={(e) => setForgotNewPassword(e.target.value)}
+                  placeholder="New password" type="password" autoComplete="new-password"
+                  style={{ width: '100%', padding: '14px 16px', border: '1px solid #e2e2e2', borderRadius: '12px', fontSize: '15px', fontFamily: 'inherit' }} />
+                {forgotError && <div style={{ fontSize: '13px', color: '#ea4335' }}>{forgotError}</div>}
+                <button onClick={async () => {
+                  setForgotLoading(true); setForgotError('');
+                  const res = await apiConfirmPasswordReset(forgotPhone, forgotOtp, forgotNewPassword).catch(() => ({ success: false }));
+                  setForgotLoading(false);
+                  if (res.success) setForgotStep('done');
+                  else setForgotError(res.error ?? 'Invalid code. Please try again.');
+                }} className="btn btn-primary" disabled={forgotLoading || forgotOtp.length < 6 || !forgotNewPassword.trim()}>
+                  {forgotLoading ? 'Resetting…' : 'Reset Password'}
+                </button>
+              </div>
+            )}
+
+            {forgotStep === 'done' && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>✓</div>
+                <div style={{ fontWeight: 700, marginBottom: '20px' }}>Password reset successfully!</div>
+                <button onClick={() => { setShowForgot(false); setForgotStep('phone'); setForgotPhone(''); setForgotOtp(''); setForgotNewPassword(''); }}
+                  className="btn btn-primary">Back to Sign In</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

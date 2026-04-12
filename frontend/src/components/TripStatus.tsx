@@ -87,8 +87,7 @@ const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
           if (data.eta !== undefined) setEta(data.eta);
           if (data.lat && data.lng) setDriverPos({ lat: data.lat, lng: data.lng });
           if (data.status === 'COMPLETED') onTripComplete?.();
-        });
-        client.subscribe(`/topic/chat/${tripId}`, (msg) => {
+        });        client.subscribe(`/topic/chat/${tripId}`, (msg) => {
           const data = JSON.parse(msg.body);
           // Only add driver messages — rider messages are added locally on send
           if (data.sender !== 'rider') {
@@ -102,7 +101,19 @@ const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
     return () => { client.deactivate(); };
   }, [tripId]);
 
-  // Scroll chat to bottom
+  // Dev simulation: auto-advance trip status since no driver app yet
+  useEffect(() => {
+    if (!tripId) return;
+    const steps = [
+      { delay: 3000, eta: 4 },
+      { delay: 8000, eta: 2 },
+      { delay: 14000, eta: 0 },
+    ];
+    const timers = steps.map(({ delay, eta }) =>
+      setTimeout(() => setEta(eta), delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [tripId]);
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, showChat]);

@@ -139,3 +139,18 @@ export const apiVerifyOtp = (phone: string, code: string) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ phone, code }),
   }).then((r) => r.json());
+
+// Password reset
+export const apiSendPasswordReset = (phone: string) =>
+  fetch(`${BASE_URL}/auth/reset/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  }).then((r) => r.json());
+
+export const apiConfirmPasswordReset = (phone: string, code: string, newPassword: string) =>
+  fetch(`${BASE_URL}/auth/reset/confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, code, newPassword }),
+  }).then((r) => r.json());
