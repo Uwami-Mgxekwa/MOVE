@@ -4,29 +4,35 @@ const getHeaders = (): HeadersInit => {
   const token = localStorage.getItem('token');
   return {
     'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
+
+const getPublicHeaders = (): HeadersInit => ({
+  'Content-Type': 'application/json',
+  'ngrok-skip-browser-warning': 'true',
+});
 
 // Auth
 export const apiRegister = (name: string, email: string, password: string) =>
   fetch(`${BASE_URL}/auth/register`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getPublicHeaders(),
     body: JSON.stringify({ name, email, password }),
   }).then((r) => r.json());
 
 export const apiLogin = (email: string, password: string) =>
   fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getPublicHeaders(),
     body: JSON.stringify({ email, password }),
   }).then((r) => r.json());
 
 export const apiGoogleLogin = (idToken: string) =>
   fetch(`${BASE_URL}/auth/google`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getPublicHeaders(),
     body: JSON.stringify({ idToken }),
   }).then((r) => r.json());
 
@@ -125,18 +131,17 @@ export const apiRateTrip = (tripId: number, riderId: number, stars: number, comm
     body: JSON.stringify({ tripId, riderId, stars, comment }),
   }).then((r) => r.json());
 
-// OTP
 export const apiSendOtp = (phone: string) =>
   fetch(`${BASE_URL}/auth/otp/send`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getPublicHeaders(),
     body: JSON.stringify({ phone }),
   }).then((r) => r.json());
 
 export const apiVerifyOtp = (phone: string, code: string) =>
   fetch(`${BASE_URL}/auth/otp/verify`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getPublicHeaders(),
     body: JSON.stringify({ phone, code }),
   }).then((r) => r.json());
 
@@ -144,13 +149,13 @@ export const apiVerifyOtp = (phone: string, code: string) =>
 export const apiSendPasswordReset = (phone: string) =>
   fetch(`${BASE_URL}/auth/reset/send`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getPublicHeaders(),
     body: JSON.stringify({ phone }),
   }).then((r) => r.json());
 
 export const apiConfirmPasswordReset = (phone: string, code: string, newPassword: string) =>
   fetch(`${BASE_URL}/auth/reset/confirm`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getPublicHeaders(),
     body: JSON.stringify({ phone, code, newPassword }),
   }).then((r) => r.json());
