@@ -15,21 +15,32 @@ L.Icon.Default.mergeOptions({
 
 interface ChatMessage { sender: 'rider' | 'driver'; text: string; time: string; }
 
+type TripPhase = 'PENDING' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+interface DriverInfo {
+  name: string;
+  plate: string;
+  color: string;
+  brand: string;
+  eta: number;
+  rating?: number;
+}
+
 interface TripStatusProps {
   tripId?: number | null;
   onTripComplete?: () => void;
 }
 
 const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
+  const [phase, setPhase] = useState<TripPhase>('PENDING');
+  const [driver, setDriver] = useState<DriverInfo | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [cancelled, setCancelled] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [eta, setEta] = useState(4);
   const [chatInput, setChatInput] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { sender: 'driver', text: "I'm on my way! See you soon 🚗", time: '14:28' },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   // Map refs
   const mapRef = useRef<HTMLDivElement>(null);
@@ -87,6 +98,21 @@ const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
           if (data.eta !== undefined) setEta(data.eta);
           if (data.lat && data.lng) setDriverPos({ lat: data.lat, lng: data.lng });
           if (data.status === 'COMPLETED') onTripComplete?.();
+          if (data.status === 'ACCEPTED') {
+            setPhase('ACCEPTED');
+            setDriver({
+              name: data.driverName ?? 'Michael',
+              plate: data.vehiclePlate ?? 'CA 123-456',
+              color: data.vehicleColor ?? 'White',
+              brand: data.vehicleBrand ?? 'Toyota Fortuner',
+              eta: data.eta ?? 4,
+              rating: 4.9,
+            });
+            setEta(data.eta ?? 4);
+          }
+          if (data.status === 'IN_PROGRESS') setPhase('IN_PROGRESS');
+          if (data.status === 'COMPLETED') { setPhase('COMPLETED'); onTripComplete?.(); }
+          if (data.status === 'CANCELLED') { setPhase('CANCELLED'); setCancelled(true); }
         });        client.subscribe(`/topic/chat/${tripId}`, (msg) => {
           const data = JSON.parse(msg.body);
           // Only add driver messages — rider messages are added locally on send
@@ -104,15 +130,21 @@ const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
   // Dev simulation: auto-advance trip status since no driver app yet
   useEffect(() => {
     if (!tripId) return;
-    const steps = [
-      { delay: 3000, eta: 4 },
-      { delay: 8000, eta: 2 },
-      { delay: 14000, eta: 0 },
-    ];
-    const timers = steps.map(({ delay, eta }) =>
-      setTimeout(() => setEta(eta), delay)
-    );
-    return () => timers.forEach(clearTimeout);
+    // Simulate: PENDING → ACCEPTED (3s) → IN_PROGRESS (10s)
+    const t1 = setTimeout(() => {
+      setPhase('ACCEPTED');
+      setDriver({
+        name: 'Michael Dlamini',
+        plate: 'CA 456-789',
+        color: 'White',
+        brand: 'Toyota Fortuner',
+        eta: 4,
+        rating: 4.9,
+      });
+      setEta(4);
+    }, 3000);
+    const t2 = setTimeout(() => { setPhase('IN_PROGRESS'); setEta(0); }, 12000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [tripId]);
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -140,6 +172,41 @@ const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
   const handleCall = () => { window.location.href = 'tel:+27825550100'; };
   const handleCancel = () => setShowCancelConfirm(true);
 
+  const renderChat = () => (
+    <div onClick={() => setShowChat(false)} style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', backgroundColor: '#fff', borderRadius: '24px 24px 0 0', height: '70vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #f0f0f0' }}>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: '16px' }}>{driver?.name ?? 'Driver'}</div>
+            <div style={{ fontSize: '12px', color: '#34a853', fontWeight: 600 }}>● Online</div>
+          </div>
+          <button onClick={() => setShowChat(false)} style={{ background: '#f0f0f0', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <X size={18} />
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {messages.map((msg, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: msg.sender === 'rider' ? 'flex-end' : 'flex-start' }}>
+              <div style={{ maxWidth: '75%', padding: '10px 14px', borderRadius: msg.sender === 'rider' ? '18px 18px 4px 18px' : '18px 18px 18px 4px', backgroundColor: msg.sender === 'rider' ? '#6a0dad' : '#f0f0f0', color: msg.sender === 'rider' ? '#fff' : '#111' }}>
+                <div style={{ fontSize: '14px' }}>{msg.text}</div>
+                <div style={{ fontSize: '11px', opacity: 0.6, marginTop: '4px', textAlign: 'right' }}>{msg.time}</div>
+              </div>
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+        <div style={{ padding: '12px 16px', borderTop: '1px solid #f0f0f0', display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="Type a message…"
+            style={{ flex: 1, padding: '12px 16px', border: '1px solid #eee', borderRadius: '24px', fontSize: '14px', fontFamily: 'inherit', outline: 'none' }} />
+          <button onClick={sendMessage} style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: '#6a0dad', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+            <Send size={18} color="#fff" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   if (cancelled) {
     return (
       <div className="container fade-in" style={{ padding: '32px 0 64px', textAlign: 'center' }}>
@@ -148,6 +215,111 @@ const TripStatus: React.FC<TripStatusProps> = ({ tripId, onTripComplete }) => {
           <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '8px' }}>Ride Cancelled</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Your ride has been cancelled. No charge has been applied.</p>
         </div>
+      </div>
+    );
+  }
+
+  // PENDING — looking for driver
+  if (phase === 'PENDING') {
+    return (
+      <div className="container fade-in" style={{ padding: '48px 0 64px', textAlign: 'center' }}>
+        <div className="card" style={{ padding: '40px 24px' }}>
+          <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: 'var(--accent-transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', animation: 'pulse 1.5s ease-in-out infinite' }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+          <h2 style={{ fontSize: '22px', fontWeight: 900, marginBottom: '8px' }}>Looking for a driver…</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: 1.6 }}>We're finding the nearest available driver for you. This usually takes under a minute.</p>
+          <div style={{ marginTop: '32px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent)', opacity: 0.3 + i * 0.35 }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ACCEPTED — driver confirmed
+  if (phase === 'ACCEPTED' && driver) {
+    return (
+      <div className="container fade-in" style={{ padding: '32px 0 64px' }}>
+        {/* Green confirmed banner */}
+        <div style={{ backgroundColor: '#34a853', borderRadius: '16px', padding: '20px 24px', marginBottom: '20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.8)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Driver Confirmed</div>
+          <div style={{ fontSize: '22px', fontWeight: 900, color: '#fff' }}>Pickup in {eta} min</div>
+        </div>
+
+        <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=150&h=150"
+              alt="Driver" style={{ width: '64px', height: '64px', borderRadius: '14px', objectFit: 'cover', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '18px', fontWeight: 900 }}>{driver.name}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                <Star size={13} fill="#FFD700" color="#FFD700" />
+                <span>{driver.rating} rating</span>
+              </div>
+            </div>
+            <ShieldCheck size={22} color="#34a853" />
+          </div>
+
+          {/* Vehicle details */}
+          <div style={{ marginTop: '20px', padding: '16px', backgroundColor: '#f8f9fa', borderRadius: '12px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '12px' }}>Your Ride</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>PLATE</div>
+                <div style={{ fontSize: '16px', fontWeight: 900, marginTop: '2px' }}>{driver.plate}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>COLOUR</div>
+                <div style={{ fontSize: '16px', fontWeight: 900, marginTop: '2px' }}>{driver.color}</div>
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>VEHICLE</div>
+                <div style={{ fontSize: '16px', fontWeight: 900, marginTop: '2px' }}>{driver.brand}</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+            <button onClick={() => setShowChat(true)} className="btn"
+              style={{ flex: 1, backgroundColor: '#f0f0f0', color: '#000', padding: '12px', fontSize: '14px', borderRadius: '12px', border: 'none' }}>
+              <MessageCircle size={18} /> Message
+            </button>
+            <button onClick={() => { window.location.href = 'tel:+27825550100'; }} className="btn"
+              style={{ flex: 1, backgroundColor: '#f0f0f0', color: '#000', padding: '12px', fontSize: '14px', borderRadius: '12px', border: 'none' }}>
+              <Phone size={18} /> Call
+            </button>
+          </div>
+        </div>
+
+        <button onClick={() => setShowCancelConfirm(true)} className="btn"
+          style={{ color: 'var(--error)', backgroundColor: 'transparent', fontSize: '14px', fontWeight: 700, padding: '12px', border: 'none' }}>
+          <XCircle size={18} /> Cancel Ride
+        </button>
+
+        {/* Cancel confirmation */}
+        {showCancelConfirm && (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '32px 24px', width: '100%', maxWidth: '360px', textAlign: 'center' }}>
+              <XCircle size={40} color="var(--error)" style={{ marginBottom: '16px' }} />
+              <div style={{ fontWeight: 900, fontSize: '18px', marginBottom: '8px' }}>Cancel this ride?</div>
+              <div style={{ fontSize: '14px', color: '#717171', marginBottom: '28px' }}>Your driver is on the way. A cancellation fee may apply.</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button onClick={() => { setShowCancelConfirm(false); setCancelled(true); setPhase('CANCELLED'); }} className="btn"
+                  style={{ backgroundColor: '#ea4335', color: '#fff', fontWeight: 800, border: 'none' }}>Yes, Cancel</button>
+                <button onClick={() => setShowCancelConfirm(false)} className="btn"
+                  style={{ backgroundColor: '#f5f5f5', color: '#111', fontWeight: 700, border: 'none' }}>Keep My Ride</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Chat */}
+        {showChat && renderChat()}
       </div>
     );
   }

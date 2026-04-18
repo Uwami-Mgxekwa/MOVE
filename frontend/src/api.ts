@@ -1,6 +1,8 @@
 // When VITE_API_URL is set (e.g. ngrok), use it directly.
 // Otherwise use /api which Vite proxies to localhost:8080.
-const BASE = import.meta.env.VITE_API_URL ?? '/api';
+const BASE = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== '')
+  ? import.meta.env.VITE_API_URL
+  : '/api';
 
 const getHeaders = (): HeadersInit => {
   const token = localStorage.getItem('token');
@@ -46,6 +48,9 @@ export const apiGetRiderTrips = (riderId: number) =>
 
 export const apiGetTrip = (id: number) =>
   fetch(`${BASE}/trips/${id}`, { headers: getHeaders() }).then(r => r.json());
+
+export const apiGetTripDetails = (id: number) =>
+  fetch(`${BASE}/trips/${id}/details`, { headers: getHeaders() }).then(r => r.json());
 
 export const apiUpdateTripStatus = (id: number, status: string) =>
   fetch(`${BASE}/trips/${id}/status?status=${status}`, { method: 'PUT', headers: getHeaders() }).then(r => r.json());

@@ -27,6 +27,24 @@ public class Trip {
     private boolean shared = false;
     private Integer maxPassengers = 1;
 
+    // Driver vehicle details (set when driver accepts)
+    private String driverName;
+    private String vehiclePlate;
+    private String vehicleColor;
+    private String vehicleBrand;
+    private Integer etaMinutes;
+
+    public String getDriverName() { return driverName; }
+    public void setDriverName(String driverName) { this.driverName = driverName; }
+    public String getVehiclePlate() { return vehiclePlate; }
+    public void setVehiclePlate(String vehiclePlate) { this.vehiclePlate = vehiclePlate; }
+    public String getVehicleColor() { return vehicleColor; }
+    public void setVehicleColor(String vehicleColor) { this.vehicleColor = vehicleColor; }
+    public String getVehicleBrand() { return vehicleBrand; }
+    public void setVehicleBrand(String vehicleBrand) { this.vehicleBrand = vehicleBrand; }
+    public Integer getEtaMinutes() { return etaMinutes; }
+    public void setEtaMinutes(Integer etaMinutes) { this.etaMinutes = etaMinutes; }
+
     public boolean isShared() { return shared; }
     public void setShared(boolean shared) { this.shared = shared; }
     public Integer getMaxPassengers() { return maxPassengers; }

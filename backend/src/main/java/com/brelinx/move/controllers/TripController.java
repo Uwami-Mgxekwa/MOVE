@@ -45,10 +45,36 @@ public class TripController {
         Trip trip = tripRepository.findById(id).orElseThrow(() -> new RuntimeException("Trip not found"));
         trip.setStatus(status);
         tripRepository.save(trip);
-
-        // Push WebSocket notification to rider
         messagingTemplate.convertAndSend("/topic/trip/" + id,
                 java.util.Map.of("status", status, "tripId", id));
         return trip;
+    }
+
+    // Driver accepts trip — sets vehicle details and pushes to rider
+    @PutMapping("/{id}/accept")
+    public Trip acceptTrip(@PathVariable Long id, @RequestBody java.util.Map<String, Object> body) {
+        Trip trip = tripRepository.findById(id).orElseThrow(() -> new RuntimeException("Trip not found"));
+        trip.setStatus("ACCEPTED");
+        trip.setDriverName((String) body.getOrDefault("driverName", "Michael"));
+        trip.setVehiclePlate((String) body.getOrDefault("vehiclePlate", "CA 123-456"));
+        trip.setVehicleColor((String) body.getOrDefault("vehicleColor", "White"));
+        trip.setVehicleBrand((String) body.getOrDefault("vehicleBrand", "Toyota Fortuner"));
+        trip.setEtaMinutes((Integer) body.getOrDefault("etaMinutes", 4));
+        tripRepository.save(trip);
+
+        messagingTemplate.convertAndSend("/topic/trip/" + id, java.util.Map.of(
+                "status", "ACCEPTED",
+                "driverName", trip.getDriverName(),
+                "vehiclePlate", trip.getVehiclePlate(),
+                "vehicleColor", trip.getVehicleColor(),
+                "vehicleBrand", trip.getVehicleBrand(),
+                "eta", trip.getEtaMinutes()
+        ));
+        return trip;
+    }
+
+    @GetMapping("/{id}/details")
+    public Trip getTripDetails(@PathVariable Long id) {
+        return tripRepository.findById(id).orElseThrow(() -> new RuntimeException("Trip not found"));
     }
 }

@@ -51,9 +51,11 @@ const Home: React.FC<HomeProps> = ({ onBookRide, userId }) => {
           );
           const data = await res.json();
           const road = data.address?.road ?? '';
+          const houseNumber = data.address?.house_number ?? '';
           const suburb = data.address?.suburb ?? data.address?.neighbourhood ?? '';
           const city = data.address?.city ?? data.address?.town ?? data.address?.village ?? '';
-          const addr = [road, suburb, city].filter(Boolean).join(', ') || data.display_name?.split(',').slice(0, 3).join(',') || 'Current location';
+          const streetWithNumber = houseNumber ? `${houseNumber} ${road}` : road;
+          const addr = [streetWithNumber, suburb, city].filter(Boolean).join(', ') || data.display_name?.split(',').slice(0, 3).join(',') || 'Current location';
           setFromCity(addr);
         } catch {
           setFromCity('Current location');
