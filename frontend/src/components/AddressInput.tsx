@@ -68,10 +68,11 @@ const AddressInput: React.FC<AddressInputProps> = ({ value, onChange, placeholde
       </div>
 
       {open && suggestions.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 50, overflow: 'hidden', marginTop: '4px' }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 999, overflow: 'hidden', marginTop: '4px', border: '1px solid #eee' }}>
           {suggestions.map((s, i) => (
-            <div key={i} onClick={() => { onChange(s.display_name.split(',').slice(0, 3).join(',')); setOpen(false); setSuggestions([]); }}
-              style={{ padding: '12px 16px', cursor: 'pointer', fontSize: '13px', borderBottom: i < suggestions.length - 1 ? '1px solid #f5f5f5' : 'none', display: 'flex', gap: '10px', alignItems: 'flex-start' }}
+            <div key={i}
+              onMouseDown={(e) => { e.preventDefault(); onChange(s.display_name.split(',').slice(0, 3).join(',')); setOpen(false); setSuggestions([]); }}
+              style={{ padding: '12px 16px', cursor: 'pointer', fontSize: '13px', borderBottom: i < suggestions.length - 1 ? '1px solid #f5f5f5' : 'none', display: 'flex', gap: '10px', alignItems: 'flex-start', backgroundColor: '#fff' }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9f5ff')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#fff')}
             >
