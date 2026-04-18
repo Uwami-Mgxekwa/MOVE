@@ -14,7 +14,6 @@ const Home: React.FC<HomeProps> = ({ onBookRide, userId }) => {
   const [fromCity, setFromCity] = useState('');
   const [toCity, setToCity] = useState('');
   const [locating, setLocating] = useState(false);
-  const [locError, setLocError] = useState('');
   const [savedPlaces, setSavedPlaces] = useState<SavedPlace[]>([]);
   const [showAddPlace, setShowAddPlace] = useState(false);
   const [newLabel, setNewLabel] = useState('');
@@ -63,7 +62,7 @@ const Home: React.FC<HomeProps> = ({ onBookRide, userId }) => {
         }
       },
       () => {
-        setLocError('Location access denied — enter manually');
+        // Silently fail — user can type manually, no error shown
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -86,9 +85,8 @@ const Home: React.FC<HomeProps> = ({ onBookRide, userId }) => {
         <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'visible' }}>
           <form onSubmit={handleSearch}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <AddressInput value={fromCity} onChange={(v) => { setFromCity(v); setLocError(''); }}
+              <AddressInput value={fromCity} onChange={(v) => setFromCity(v)}
                 placeholder={locating ? 'Getting your location…' : 'Enter pickup location'} icon="pickup" />
-              {locError && <div style={{ fontSize: '12px', color: '#f87171', paddingLeft: '4px' }}>{locError}</div>}
               <div style={{ height: '1px', backgroundColor: '#eee' }} />
               <AddressInput value={toCity} onChange={setToCity} placeholder="Where to?" icon="destination" />
             </div>

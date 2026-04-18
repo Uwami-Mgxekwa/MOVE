@@ -123,10 +123,13 @@ input {
 /* Utilities */
 .container {
   width: 100%;
-  max-width: 540px; /* Centered content for desktop, matches mobile width */
+  max-width: 540px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 20px;
   position: relative;
+  /* Safe area for notched phones */
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
 }
 
 .card {
@@ -223,6 +226,7 @@ header {
   grid-template-columns: repeat(3, 1fr);
   z-index: 50;
   backdrop-filter: blur(10px);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .nav-item {

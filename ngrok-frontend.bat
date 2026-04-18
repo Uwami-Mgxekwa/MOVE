@@ -1,0 +1,3 @@
+@echo off
+echo Starting ngrok tunnel for frontend (port 5173)...
+ngrok http 5173
